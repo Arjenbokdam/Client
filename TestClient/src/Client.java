@@ -11,7 +11,7 @@ import java.util.Scanner;
  */
 public class Client {
 	
-	private static final String IPADDRESS = "127.0.0.1";
+	private static final String IPADDRESS = "82.73.252.248";
 	private static final int PORTNUMBER = 7789;
 	private static Socket socket;
 	private static Scanner scanner;
