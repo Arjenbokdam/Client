@@ -5,8 +5,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
 
-import Controller.ClientController;
-
 /**
  * SocketListener class that implements a Runnable.
  * Is used as a Thread that reads the messages from the server.
@@ -17,16 +15,16 @@ import Controller.ClientController;
 public class SocketListener implements Runnable {
 	
 	private Socket socket;
-	private ClientController controller;
+	private ClientModel model;
 
 	/**
 	 * Constructor for the SocketListener object.
 	 * 
 	 * @param socket Socket where the messages are read from.
 	 */
-	public SocketListener(Socket socket, ClientController controller) {
+	public SocketListener(Socket socket, ClientModel model) {
 		this.socket = socket;
-		this.controller = controller;
+		this.model = model;
 	}
 	
 	/**
@@ -40,9 +38,9 @@ public class SocketListener implements Runnable {
 			in = socket.getInputStream();
 			BufferedReader bin = new BufferedReader(new InputStreamReader(in));
 			String line;
-			while ((line = bin.readLine()) != null) {
+			while((line = bin.readLine()) != null) {
 				//System.out.println(line);
-				controller.writeToServerMessages(line);
+				model.writeToServerMessages(line);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

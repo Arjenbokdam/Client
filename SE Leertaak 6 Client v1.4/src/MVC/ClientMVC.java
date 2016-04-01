@@ -1,10 +1,6 @@
 package MVC;
 
 import Controller.ClientController;
-import Views.ChooseGameView;
-import Views.LoginView;
-import Views.ServerMessagesView;
-import Views.TicTacToeView;
 
 /**
  * Client written in MVC Structure.
@@ -18,8 +14,15 @@ public class ClientMVC {
 	private static ClientController controller;
 
 	public static void main(String[] args) {
-		
-		controller = new ClientController();
+		setController(new ClientController());
+	}
+
+	public static ClientController getController() {
+		return controller;
+	}
+
+	public static void setController(ClientController controller) {
+		ClientMVC.controller = controller;
 	}
 
 }

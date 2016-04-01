@@ -4,12 +4,13 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.Stack;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 import Model.ClientModel;
 import Views.ChooseGameView;
+import Views.LobbyView;
 import Views.LoginView;
 import Views.ServerMessagesView;
 import Views.TicTacToeView;
@@ -18,22 +19,18 @@ import Views.TicTacToeView;
  * Controller for the Client application.
  * 
  * @author Tobias Schlichter
- * @version 1.0
+ * @version 1.1
  */
 public class ClientController implements ActionListener {
 	
 	private JFrame frame;
 	private ClientModel model;
 	
-	private String playerName = "";
-	
-	private ServerMessagesView serverMessagesView;
+	public ServerMessagesView serverMessagesView;
 	private LoginView loginView;
 	private ChooseGameView chooseGameView;
-	private TicTacToeView tictactoeView;
-	
-	private Stack<String> serverMessages = new Stack<>();
-	
+	public TicTacToeView tictactoeView;
+	private LobbyView lobbyView;
 	
 	/**
 	 * Constructor for a new ClientController object.
@@ -56,7 +53,7 @@ public class ClientController implements ActionListener {
 		
 		model = new ClientModel(this);
 		
-		frame = new JFrame("Client v1.0");
+		frame = new JFrame("Client v1.4");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setLayout(new GridLayout(2,2));
 		frame.setVisible(true);
@@ -89,22 +86,7 @@ public class ClientController implements ActionListener {
 			}
 		}
 		if(e.getActionCommand().equals("USERLOGIN")) {
-			if(model.connectToServer()) {
-				String loginName = loginView.getLoginName();
-				playerName = loginName;
-				System.out.println("-- LOG: Login try | username: " + loginName + " -- ");
-				if(!loginName.isEmpty()) {
-					try {
-						model.sendToSocket("login " + loginName);
-						showChooseGameScreen();
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					}
-				}
-				else {
-					System.out.println("-- LOG: No username entered -- ");
-				}
-			}
+			model.tryLogin(loginView.getLoginName());
 		}
 		if(e.getActionCommand().equals("USERLOGOUT")) {
 			try {
@@ -118,33 +100,63 @@ public class ClientController implements ActionListener {
 		}
 		// TicTacToe Buttons
 		if(e.getActionCommand().equals("TTTBUTTON0")) {
-			setTTTMove(0);
+			model.setTTTMove(0);
 		}
 		if(e.getActionCommand().equals("TTTBUTTON1")) {
-			setTTTMove(1);
+			model.setTTTMove(1);
 		}
 		if(e.getActionCommand().equals("TTTBUTTON2")) {
-			setTTTMove(2);
+			model.setTTTMove(2);
 		}
 		if(e.getActionCommand().equals("TTTBUTTON3")) {
-			setTTTMove(3);
+			model.setTTTMove(3);
 		}
 		if(e.getActionCommand().equals("TTTBUTTON4")) {
-			setTTTMove(4);
+			model.setTTTMove(4);
 		}
 		if(e.getActionCommand().equals("TTTBUTTON5")) {
-			setTTTMove(5);
+			model.setTTTMove(5);
 		}
 		if(e.getActionCommand().equals("TTTBUTTON6")) {
-			setTTTMove(6);
+			model.setTTTMove(6);
 		}
 		if(e.getActionCommand().equals("TTTBUTTON7")) {
-			setTTTMove(7);
+			model.setTTTMove(7);
 		}
 		if(e.getActionCommand().equals("TTTBUTTON8")) {
-			setTTTMove(8);
+			model.setTTTMove(8);
 		}
-		
+		if(e.getActionCommand().equals("UPDATEPLAYERLIST")) {
+			model.updateOnlinePlayers();
+		}
+		if(e.getActionCommand().contains("CHALLENGE0")) {
+			try {
+				model.sendToSocket("challenge " + '"' + model.getOnlinePlayers().get(0) + '"' + " " + '"' + "Tic Tac Toe v1.4" + '"');
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}
+		if(e.getActionCommand().contains("CHALLENGE1")) {
+			try {
+				model.sendToSocket("challenge " + '"' + model.getOnlinePlayers().get(1) + '"' + " " + '"' + "Tic Tac Toe v1.4" + '"');
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}
+		if(e.getActionCommand().contains("CHALLENGE2")) {
+			try {
+				model.sendToSocket("challenge " + '"' + model.getOnlinePlayers().get(2) + '"' + " " + '"' + "Tic Tac Toe v1.4" + '"');
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}	
+		if(e.getActionCommand().contains("CHALLENGE3")) {
+			try {
+				model.sendToSocket("challenge " + '"' + model.getOnlinePlayers().get(3) + '"' + " " + '"' + "Tic Tac Toe v1.4" + '"');
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}	
 	}
 	
 	/**
@@ -162,9 +174,10 @@ public class ClientController implements ActionListener {
 		frame.pack();
 	}
 	
+	/*
 	/**
 	 * Removes all other frames and shows the choose game screen.
-	 */
+	 
 	private void showChooseGameScreen() {
 		clearComponents();
 		
@@ -176,11 +189,12 @@ public class ClientController implements ActionListener {
 		
 		frame.pack();
 	}
+	*/
 	
 	/**
 	 * Removes all other frames and shows the Tic Tac Toe screen.
 	 */
-	private void showTicTacToeScreen() {
+	public void showTicTacToeScreen() {
 		tictactoeView = new TicTacToeView();
 		tictactoeView.setActionListener(this);
 		
@@ -195,66 +209,43 @@ public class ClientController implements ActionListener {
 		frame.pack();
 	}
 	
-	/**
-	 * Sends a move for the Tic Tac Toe game.
-	 * 
-	 * @param i int that indicates the position on the board.
-	 */
-	private void setTTTMove(int i) {
-		try {
-			model.sendToSocket("move " + i);
-			tictactoeView.setMove(0, i);
-			System.out.println("-- LOG: Move " + i + " --");
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
-	}
+	public void showLobbyScreen() {
+		clearComponents();
+		
+		lobbyView = new LobbyView(model.getOnlinePlayers());
+		lobbyView.setActionListener(this);
+
+		frame.add(lobbyView);
+		frame.add(serverMessagesView);
+		
+		lobbyView.setVisible(true);
+		serverMessagesView.setVisible(true);
+		
+		frame.pack();
+	}	
 	
-	/**
-	 * Is called to recieve and process messages from the server.
-	 * 
-	 * @param text String input.
-	 */
-	public void writeToServerMessages(String text) {
-		if(!text.isEmpty()) {
-			serverMessages.push(text);
-			serverMessagesView.setServerText(handleServerMessage());
-		}
-	}
-	
-	/**
-	 * Handles commands from the server.
-	 * 
-	 * @return String input command.
-	 */
-	private String handleServerMessage() {
-		String tempString = serverMessages.pop();
-		
-		System.out.println("Pop : " + tempString);
-		
-		if(tempString.contains("OK")) {
-			return "Action OK";
-		}
-		if(tempString.contains("Tic Tac Toe")) {
-			showTicTacToeScreen();
-		}
-		if(tempString.contains("SVR GAME") && tempString.contains(" MOVE:") && !tempString.contains(playerName)) {
-			tictactoeView.setMove(1, Integer.parseInt(tempString.substring((tempString.indexOf("MOVE: ") + 7), (tempString.indexOf("MOVE: ") + 8))));
-		}
-		if(tempString.contains("YOURTURN")) {
-			tictactoeView.setYourTurn(true);
-		}
-		if(!tempString.contains("YOURTURN")) {
-			tictactoeView.setYourTurn(false);
-		}		
-		if(tempString.contains("SVR GAME") && tempString.contains("Win")) {
-			showChooseGameScreen();
-		}
-		if(tempString.contains("SVR GAME") && tempString.contains("Draw")) {
-			showChooseGameScreen();
-		}
-		
-		return tempString;
+	public void popupChallange(String name, String gameName, String challengeNumber) {
+		Object[] options = {"Yes, I accept", "No, I refuse"};
+        int n = JOptionPane.showOptionDialog(frame,
+                        name + " challanges you for a game " + gameName,
+                        "CHALLANGE",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        options,
+                        options[0]);
+        if (n == JOptionPane.YES_OPTION) {
+            try {
+				model.sendToSocket("challenge accept " + challengeNumber);
+	            System.out.println("Yes I accept!");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+        } else if (n == JOptionPane.NO_OPTION) {
+            System.out.println("No I refuse!");
+        } else {
+            System.out.println("NO OPTION");
+        }
 	}
 	
 	/**
@@ -265,6 +256,10 @@ public class ClientController implements ActionListener {
 		frame.remove(loginView);
 		frame.remove(tictactoeView);
 		frame.remove(serverMessagesView);
+		
+		if(lobbyView != null) {
+			frame.remove(lobbyView);
+		}
 		
 		chooseGameView.setVisible(false);
 		loginView.setVisible(false);
