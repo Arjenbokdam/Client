@@ -151,24 +151,50 @@ public class ClientModel {
 	 */
 	private String handleServerMessage() {
 		String tempString = serverMessages.pop();
-		
+
 		System.out.println("Pop : " + tempString);
+		
+		if(tempString.contains("Illegal") || tempString.contains("error")){
+			return "Illegal Move Made";
+		}
 		
 		if(tempString.contains("OK")) {
 			return "Action OK";
 		}
+		if(tempString.contains("Othello") && !tempString.contains("CHALLENGE")) {
+			controller.showOthelloScreen();
+		}
 		if(tempString.contains("Tic Tac Toe") && !tempString.contains("CHALLENGE")) {
 			controller.showTicTacToeScreen();
 		}
+		//update opponent move
 		if(tempString.contains("SVR GAME") && tempString.contains(" MOVE:") && !tempString.contains(playerName)) {
-			controller.tictactoeView.setMove(1, Integer.parseInt(tempString.substring((tempString.indexOf("MOVE: ") + 7), (tempString.indexOf("MOVE: ") + 8))));
+			try{
+				String move =  tempString.substring((tempString.indexOf("MOVE: ") + 7), (tempString.indexOf("MOVE: ") + 10));		
+				controller.setMove(1,move);
+			}catch (NumberFormatException e){
+				System.out.println("Parse error - Can not parse oppenents move");
+			}
+					
+		}
+		//update the currentplayer move
+		if(tempString.contains("SVR GAME") && tempString.contains(" MOVE:") && tempString.contains(playerName)) {
+			try{
+				String move =  tempString.substring((tempString.indexOf("MOVE: ") + 7), (tempString.indexOf("MOVE: ") + 10));		
+				controller.setMove(0,move);
+			}catch (NumberFormatException e){
+				System.out.println("Parse error - Can not parse my own move" );
+			}
+					
 		}
 		if(tempString.contains("YOURTURN")) {
-			controller.tictactoeView.setYourTurn(true);
+			controller.setYourTurn(true);
 		}
 		if(!tempString.contains("YOURTURN")) {
-			controller.tictactoeView.setYourTurn(false);
-		}		
+			controller.setYourTurn(false);
+		}
+		
+		
 		if(tempString.contains("SVR GAME DRAW") || tempString.contains("SVR GAME WIN") || tempString.contains("SVR GAME LOSS") ) {
 			updateOnlinePlayers();
 		}
@@ -214,7 +240,20 @@ public class ClientModel {
 	public void setTTTMove(int i) {
 		try {
 			sendToSocket("move " + i);
-			controller.tictactoeView.setMove(0, i);
+			System.out.println("-- LOG: Move " + i + " --");
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Sends a move for the OThello Game game.
+	 * 
+	 * @param i int that indicates the position on the board.
+	 */
+	public void setOthelloMove(int i) {
+		try {
+			sendToSocket("move " + (i/8) + "," +  (i%8));
 			System.out.println("-- LOG: Move " + i + " --");
 		} catch (IOException e1) {
 			e1.printStackTrace();

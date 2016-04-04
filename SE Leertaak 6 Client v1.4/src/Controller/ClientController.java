@@ -8,10 +8,12 @@ import java.io.IOException;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import Enums.Game;
 import Model.ClientModel;
 import Views.ChooseGameView;
 import Views.LobbyView;
 import Views.LoginView;
+import Views.OthelloView;
 import Views.ServerMessagesView;
 import Views.TicTacToeView;
 
@@ -30,7 +32,15 @@ public class ClientController implements ActionListener {
 	private LoginView loginView;
 	private ChooseGameView chooseGameView;
 	public TicTacToeView tictactoeView;
+	public OthelloView othelloView;
 	private LobbyView lobbyView;
+	
+	private String CurrentGame ;
+	
+	private final static String TICTACTOEFILENAME = "Tic Tac Toe v1.4" ;
+	private final static String OTHELLOFILENAME = "Othello v1.1" ;
+	
+	private final static String CLIENTVERSION = "Client v1.6" ;
 	
 	/**
 	 * Constructor for a new ClientController object.
@@ -45,15 +55,18 @@ public class ClientController implements ActionListener {
 		loginView = new LoginView();
 		chooseGameView = new ChooseGameView();
 		tictactoeView = new TicTacToeView();
+		othelloView = new OthelloView();
 		serverMessagesView = new ServerMessagesView();
 		
 		loginView.setActionListener(this);
 		chooseGameView.setActionListener(this);	
 		tictactoeView.setActionListener(this);
+		othelloView.setActionListener(this);
 		
 		model = new ClientModel(this);
+		CurrentGame = "";
 		
-		frame = new JFrame("Client v1.4");
+		frame = new JFrame(CLIENTVERSION);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setLayout(new GridLayout(2,2));
 		frame.setVisible(true);
@@ -79,7 +92,7 @@ public class ClientController implements ActionListener {
 		}
 		if(e.getActionCommand().equals("OTHELLOGAME")) {
 			try {
-				model.sendToSocket("subscribe Othello");
+				model.sendToSocket("subscribe Othello v1.1");
 				System.out.println("-- LOG: Othello Game --");
 			} catch (IOException e1) {
 				e1.printStackTrace();
@@ -126,37 +139,45 @@ public class ClientController implements ActionListener {
 		if(e.getActionCommand().equals("TTTBUTTON8")) {
 			model.setTTTMove(8);
 		}
+		
+		//Othello buttons
+		if(e.getActionCommand().substring(0,7).equals(Game.Othello.name())) {
+			String move = e.getActionCommand().substring(7);
+			int movePos;
+		
+			try {
+				movePos = Integer.parseInt(move);
+				model.setOthelloMove(movePos);
+			} catch (NumberFormatException abc) {
+				System.out.println("Parse Move error");
+			}			
+		}
+		
+		
 		if(e.getActionCommand().equals("UPDATEPLAYERLIST")) {
 			model.updateOnlinePlayers();
 		}
-		if(e.getActionCommand().contains("CHALLENGE0")) {
+		
+		//challeng buttons
+		if(e.getActionCommand().length()>9)
+		if( e.getActionCommand().substring(0,9).equals("CHALLENGE")) {
 			try {
-				model.sendToSocket("challenge " + '"' + model.getOnlinePlayers().get(0) + '"' + " " + '"' + "Tic Tac Toe v1.4" + '"');
+				String command = e.getActionCommand();
+				String player =   model.getOnlinePlayers().get(Integer.parseInt(command.substring(command.indexOf(":")+1,command.indexOf(":")+2)));
+				String game =  command.substring(command.lastIndexOf(":")+1);
+				
+				if(game.equals(Game.Othello.name())){
+					game = OTHELLOFILENAME;
+				}else if(game.equals(Game.TicTacToe.name())){
+					game = TICTACTOEFILENAME;
+				}
+				
+				model.sendToSocket("challenge " + '"' + player + '"' + " " + '"' + game + '"');
+				CurrentGame = game;
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 		}
-		if(e.getActionCommand().contains("CHALLENGE1")) {
-			try {
-				model.sendToSocket("challenge " + '"' + model.getOnlinePlayers().get(1) + '"' + " " + '"' + "Tic Tac Toe v1.4" + '"');
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-		}
-		if(e.getActionCommand().contains("CHALLENGE2")) {
-			try {
-				model.sendToSocket("challenge " + '"' + model.getOnlinePlayers().get(2) + '"' + " " + '"' + "Tic Tac Toe v1.4" + '"');
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-		}	
-		if(e.getActionCommand().contains("CHALLENGE3")) {
-			try {
-				model.sendToSocket("challenge " + '"' + model.getOnlinePlayers().get(3) + '"' + " " + '"' + "Tic Tac Toe v1.4" + '"');
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-		}	
 	}
 	
 	/**
@@ -190,6 +211,69 @@ public class ClientController implements ActionListener {
 		frame.pack();
 	}
 	*/
+	
+	public void setMove(int value, String move ){
+		if(CurrentGame.equals(TICTACTOEFILENAME)){
+			
+			int temp = Integer.parseInt(move.substring(0,1));
+			tictactoeView.setMove(value, temp);
+			
+		}else if(CurrentGame.equals(OTHELLOFILENAME)){
+			
+			int X = Integer.parseInt(move.substring(0,1));
+			int Y = Integer.parseInt(move.substring(2,3));
+			
+			
+			int temp = translateMove(X,Y);
+
+			othelloView.setMove(value, temp);	
+		}
+	}
+	/**
+	 * 
+	 * @param X row
+	 * @param Y column
+	 * @return number between 0 and 63
+	 */
+	private int translateMove(int X, int Y){
+		int counter = 0;
+		for(int i = 0; i<8; i++){
+			for(int j = 0; j<8; j++){
+				if(X == i && Y == j){
+					return counter;
+				}
+				counter++;
+			}
+		}
+		return 0;
+		
+	}
+	
+	public void setYourTurn(boolean turn){
+		if(CurrentGame.equals(TICTACTOEFILENAME)){
+			tictactoeView.setYourTurn(turn);
+		}else if(CurrentGame.equals(OTHELLOFILENAME)){
+			othelloView.setYourTurn(turn);	
+		}
+	}
+	
+	/**
+	 * Removes all other frames and shows the Othello screen.
+	 */
+	public void showOthelloScreen() {
+		othelloView = new OthelloView();
+		othelloView.setActionListener(this);
+		
+		clearComponents();
+		
+		frame.add(othelloView);
+		frame.add(serverMessagesView);
+		
+		othelloView.setVisible(true);
+		serverMessagesView.setVisible(true);
+		
+		frame.pack();
+	}
 	
 	/**
 	 * Removes all other frames and shows the Tic Tac Toe screen.
@@ -238,11 +322,13 @@ public class ClientController implements ActionListener {
             try {
 				model.sendToSocket("challenge accept " + challengeNumber);
 	            System.out.println("Yes I accept!");
+	            CurrentGame = gameName;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
         } else if (n == JOptionPane.NO_OPTION) {
             System.out.println("No I refuse!");
+            CurrentGame = "";
         } else {
             System.out.println("NO OPTION");
         }
@@ -255,6 +341,7 @@ public class ClientController implements ActionListener {
 		frame.remove(chooseGameView);
 		frame.remove(loginView);
 		frame.remove(tictactoeView);
+		frame.remove(othelloView);
 		frame.remove(serverMessagesView);
 		
 		if(lobbyView != null) {
@@ -264,6 +351,7 @@ public class ClientController implements ActionListener {
 		chooseGameView.setVisible(false);
 		loginView.setVisible(false);
 		tictactoeView.setVisible(false);
+		othelloView.setVisible(false);
 	}
 
 }
